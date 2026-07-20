@@ -1,0 +1,18 @@
+sources:
+  google_scholar:
+    enabled: true
+    from_exact:
+      - scholaralerts-noreply@google.com
+
+  ieee_author_alert:
+    enabled: true
+    from_exact:
+      - no-reply@ieee.org
+      - no-reply@xplore.ieee.org
+    subject_patterns:
+      - "IEEE Xplore Author Alert"
+      - "Author Alert"
+      - "New Content from"
+    required_link_patterns:
+      - "ieeexplore.ieee.org/document/"
+

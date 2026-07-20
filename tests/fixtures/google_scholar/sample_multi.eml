@@ -1,0 +1,16 @@
+From: Google Scholar Alerts <scholaralerts-noreply@google.com>
+Subject: Google Scholar Alert: direction finding
+Date: Wed, 01 Jul 2026 08:30:00 +0800
+Message-ID: <redacted-google@example.test>
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><body>
+<div><h3><a href="https://example.org/paper-one">Example Direction Finding Paper</a></h3>
+<p>Alice Zhang, Bob Li - Signal Processing, 2025</p>
+<p>A synthetic, non-personal fixture used only for parser tests.</p></div>
+<section><strong><a href="https://example.net/paper-two">Example Sparse Array Paper</a></strong>
+<p>Carol Wu and David Sun - Array Journal, 2024</p>
+<p>Another synthetic fixture result with no live-paper dependency.</p></section>
+</body></html>
+

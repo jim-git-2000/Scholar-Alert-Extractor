@@ -1,0 +1,10 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+output/*.xlsx
+output/*.tmp
+output/.last_run.json
+
