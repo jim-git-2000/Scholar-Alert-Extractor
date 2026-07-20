@@ -91,6 +91,12 @@ first_seen_at, last_seen_at, seen_count, dedup_key
 | `MAX_EMAILS_PER_RUN` | `100` | 单次上限 |
 | `LOG_LEVEL` | `INFO` | 日志级别 |
 
+每次执行 `folders`、`test-connection`、`scan`、`process` 或 `status` 时，命令输出和程序内部 INFO/ERROR 会自动追加到固定文件 `output/scholar_alerts.log`。日志不会记录授权码、完整环境变量或邮件正文。查看最近日志：
+
+```bash
+tail -n 100 output/scholar_alerts.log
+```
+
 来源规则保存在 `config/sources.yaml`。应继续使用精确发件人列表，不要改成 `endswith("@ieee.org")` 一类宽泛匹配。
 
 ## 测试与检查

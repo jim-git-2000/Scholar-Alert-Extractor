@@ -6,5 +6,5 @@ __pycache__/
 .ruff_cache/
 output/*.xlsx
 output/*.tmp
+output/*.log
 output/.last_run.json
-

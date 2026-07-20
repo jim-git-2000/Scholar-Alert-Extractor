@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import logging
+import sys
 from typing import Annotated
 
 import typer
 
-from scholar_alerts.config import ConfigError, Settings, load_settings
+from scholar_alerts.config import PROJECT_ROOT, ConfigError, Settings, load_settings
 from scholar_alerts.excel_store import ExcelStore, ExcelStoreError
 from scholar_alerts.imap_client import ImapMailClient, ImapOperationError
-from scholar_alerts.logging_config import configure_logging
+from scholar_alerts.logging_config import configure_logging, record_cli_output
 from scholar_alerts.processor import MessageProcessor, read_last_run
 from scholar_alerts.source_detector import detect_source
 
@@ -16,17 +16,22 @@ app = typer.Typer(
     help="无痕读取 Google Scholar 与 IEEE Author Alert，并维护本地 Excel。",
     no_args_is_help=True,
 )
-LOGGER = logging.getLogger(__name__)
+LOG_FILE = PROJECT_ROOT / "output" / "scholar_alerts.log"
+
+
+def _echo(message: str, *, err: bool = False) -> None:
+    typer.echo(message, err=err)
+    record_cli_output(message, error=err)
 
 
 def _settings(*, require_folder: bool = True) -> Settings:
     try:
         settings = load_settings()
+        configure_logging(settings.log_level, log_file=LOG_FILE, command=sys.argv)
         settings.validate_credentials(require_folder=require_folder)
-        configure_logging(settings.log_level)
         return settings
     except ConfigError as exc:
-        typer.echo(f"配置错误: {exc}", err=True)
+        _echo(f"配置错误: {exc}", err=True)
         raise typer.Exit(code=2) from exc
 
 
@@ -37,9 +42,9 @@ def folders() -> None:
     try:
         with ImapMailClient(settings) as mail:
             for folder_name in mail.list_folders():
-                typer.echo(folder_name)
+                _echo(folder_name)
     except ImapOperationError as exc:
-        typer.echo(f"连接失败: {exc}", err=True)
+        _echo(f"连接失败: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
 
@@ -50,9 +55,9 @@ def test_connection() -> None:
     try:
         with ImapMailClient(settings) as mail:
             mail.select_folder(readonly=True)
-        typer.echo(f"连接成功；目标文件夹 {settings.target_folder!r} 可只读访问。")
+        _echo(f"连接成功；目标文件夹 {settings.target_folder!r} 可只读访问。")
     except ImapOperationError as exc:
-        typer.echo(f"连接测试失败: {exc}", err=True)
+        _echo(f"连接测试失败: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
 
@@ -65,17 +70,17 @@ def scan() -> None:
             mail.select_folder(readonly=True)
             summaries = mail.unread_summaries(limit=settings.max_emails_per_run)
         if not summaries:
-            typer.echo("目标文件夹没有未读邮件。")
+            _echo("目标文件夹没有未读邮件。")
             return
         for item in summaries:
             detection = detect_source(item.sender, item.subject, None, settings.source_rules)
             source = detection.source or detection.reason or "unknown"
-            typer.echo(
+            _echo(
                 f"UID={item.uid} | {item.received_at:%Y-%m-%d %H:%M:%S} | "
                 f"From={item.sender} | Source={source} | Subject={item.subject}"
             )
     except ImapOperationError as exc:
-        typer.echo(f"扫描失败: {exc}", err=True)
+        _echo(f"扫描失败: {exc}", err=True)
         raise typer.Exit(code=1) from exc
 
 
@@ -94,7 +99,7 @@ def process(
     """按日期从旧到新事务式处理未读提醒邮件。"""
     settings = _settings()
     if limit is not None and limit > settings.max_emails_per_run:
-        typer.echo(
+        _echo(
             f"--limit 超过 MAX_EMAILS_PER_RUN，已限制为 {settings.max_emails_per_run}。",
             err=True,
         )
@@ -103,23 +108,23 @@ def process(
             mail.select_folder(readonly=dry_run)
             results = MessageProcessor(settings).process_mailbox(mail, dry_run=dry_run, limit=limit)
     except ImapOperationError as exc:
-        typer.echo(f"处理前连接失败: {exc}", err=True)
+        _echo(f"处理前连接失败: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     if not results:
-        typer.echo("目标文件夹没有未读邮件。")
+        _echo("目标文件夹没有未读邮件。")
         return
     for item in results:
         if dry_run and not item.error:
             status = "预览完成"
         else:
             status = "成功" if item.marked_seen else "失败"
-        typer.echo(
+        _echo(
             f"UID={item.uid} | {status} | Source={item.source or '-'} | "
             f"识别={item.detected} 新增={item.added} 重复={item.duplicates} "
             f"解析失败={item.failed} 错误={item.error or '-'}"
         )
     errors = sum(item.error is not None for item in results)
-    typer.echo(
+    _echo(
         f"汇总：邮件={len(results)} 新增={sum(item.added for item in results)} "
         f"重复={sum(item.duplicates for item in results)} 错误={errors}"
     )
@@ -142,17 +147,17 @@ def status() -> None:
         total_papers = ExcelStore(settings.output_file).count()
         last_run = read_last_run(settings.output_file.parent / ".last_run.json")
     except (ImapOperationError, ExcelStoreError) as exc:
-        typer.echo(f"读取状态失败: {exc}", err=True)
+        _echo(f"读取状态失败: {exc}", err=True)
         raise typer.Exit(code=1) from exc
     errors = last_run.get("errors", [])
     latest_error = errors[-1] if isinstance(errors, list) and errors else "无"
-    typer.echo(f"目标文件夹未读数量: {len(summaries)}")
-    typer.echo(f"Google Scholar 待处理数量: {google_count}")
-    typer.echo(f"IEEE 待处理数量: {ieee_count}")
-    typer.echo(f"Excel 中论文总数: {total_papers}")
-    typer.echo(f"最近运行新增数量: {last_run.get('added', 0)}")
-    typer.echo(f"最近运行重复数量: {last_run.get('duplicates', 0)}")
-    typer.echo(f"最近错误: {latest_error}")
+    _echo(f"目标文件夹未读数量: {len(summaries)}")
+    _echo(f"Google Scholar 待处理数量: {google_count}")
+    _echo(f"IEEE 待处理数量: {ieee_count}")
+    _echo(f"Excel 中论文总数: {total_papers}")
+    _echo(f"最近运行新增数量: {last_run.get('added', 0)}")
+    _echo(f"最近运行重复数量: {last_run.get('duplicates', 0)}")
+    _echo(f"最近错误: {latest_error}")
 
 
 if __name__ == "__main__":
