@@ -9,8 +9,8 @@ from scholar_alerts.dedup import deduplicate_papers
 from scholar_alerts.models import MimeMessage, Paper, ParseResult
 from scholar_alerts.normalizers import decode_google_redirect, normalize_url
 from scholar_alerts.parsers.base import (
-    AlertParser,
     URL_RE,
+    AlertParser,
     clean_text,
     extract_year,
     lines_from_block,
@@ -18,7 +18,6 @@ from scholar_alerts.parsers.base import (
     soup_for,
     split_authors,
 )
-
 
 _IGNORED_TEXT = {
     "cited by",
@@ -71,18 +70,13 @@ def _candidate_links(message: MimeMessage) -> list[Tag]:
     return candidates
 
 
-def _unparsed_heading_count(message: MimeMessage, candidates: list[Tag]) -> int:
+def _unparsed_heading_count(message: MimeMessage) -> int:
     soup = soup_for(message)
     if soup is None:
         return 0
-    candidate_headings = {
-        id(heading)
-        for link in candidates
-        if (heading := link.find_parent(["h2", "h3", "h4"])) is not None
-    }
     failed = 0
     for heading in soup.find_all(["h2", "h3", "h4"]):
-        if id(heading) in candidate_headings:
+        if heading.find("a", href=True) is not None:
             continue
         title = clean_text(heading.get_text(" ", strip=True))
         siblings = heading.find_next_siblings(limit=2)
@@ -136,7 +130,7 @@ class GoogleScholarParser(AlertParser):
         failures = 0
         warnings: list[str] = []
         if links:
-            failures += _unparsed_heading_count(message, links)
+            failures += _unparsed_heading_count(message)
             for link in links:
                 title = clean_text(link.get_text(" ", strip=True))
                 href = urljoin("https://scholar.google.com", str(link.get("href", "")))

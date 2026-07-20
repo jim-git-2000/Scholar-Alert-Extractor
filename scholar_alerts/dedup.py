@@ -53,9 +53,13 @@ def matching_key(left: Paper, right: Paper) -> str | None:
     for key in candidate_keys(left):
         if key not in right_keys:
             continue
-        if key.startswith("title-author:"):
-            if left.year is not None and right.year is not None and left.year != right.year:
-                continue
+        if (
+            key.startswith("title-author:")
+            and left.year is not None
+            and right.year is not None
+            and left.year != right.year
+        ):
+            continue
         return key
     return None
 

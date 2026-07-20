@@ -13,6 +13,6 @@ sources:
       - "IEEE Xplore Author Alert"
       - "Author Alert"
       - "New Content from"
+      - "New Matches Available for Your Search"
     required_link_patterns:
       - "ieeexplore.ieee.org/document/"
-

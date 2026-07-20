@@ -8,7 +8,6 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 

@@ -8,7 +8,6 @@ from scholar_alerts.models import MessageSummary
 from scholar_alerts.processor import MessageProcessor
 from tests.helpers import make_html_email
 
-
 GOOD_HTML = """
 <div><h3><a href="https://example.org/paper">A Complete Direction Finding Paper</a></h3>
 <p>Alice Zhang - Signal Journal, 2026</p>

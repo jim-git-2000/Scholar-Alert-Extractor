@@ -14,7 +14,6 @@ from openpyxl.worksheet.worksheet import Worksheet
 from scholar_alerts.dedup import candidate_keys, dedup_key, matching_key
 from scholar_alerts.models import MergeResult, Paper
 
-
 HEADERS = [
     "title",
     "authors",
@@ -196,10 +195,10 @@ class ExcelStore:
                 actual_rows = max(sheet.max_row - 1, 0)
                 if actual_rows != expected_rows:
                     raise ExcelValidationError(
-                        (
+                        
                             f"保存后的 Excel 行数异常: 预期 {expected_rows}，"
                             f"实际 {actual_rows}"
-                        )
+                        
                     )
                 saved_keys = {
                     str(sheet.cell(row, len(HEADERS)).value or "")

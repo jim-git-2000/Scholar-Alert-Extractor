@@ -7,7 +7,6 @@ from bs4 import BeautifulSoup, Tag
 
 from scholar_alerts.models import MimeMessage, ParseResult
 
-
 YEAR_RE = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
 URL_RE = re.compile(r"https?://[^\s<>\]\[\"']+")
 

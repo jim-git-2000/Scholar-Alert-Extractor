@@ -1,6 +1,6 @@
 # Scholar Alert Extractor
 
-一个本地运行的 Python 3.12 工具。它通过 IMAP 无痕读取网易 163 邮箱指定文件夹中的未读邮件，只处理 Google Scholar 搜索快讯和 IEEE Xplore Author Alert，去重后维护 `output/papers.xlsx`。项目不会发送、移动或删除邮件，不访问正文链接，也不调用外部 API 或大语言模型。
+一个本地运行的 Python 3.12 工具。它通过 IMAP 无痕读取网易 163 邮箱指定文件夹中的未读邮件，处理 Google Scholar 搜索快讯、IEEE Xplore Author Alert 和 IEEE `New Matches Available for Your Search` 搜索提醒，去重后维护 `output/papers.xlsx`。项目不会发送、移动或删除邮件，不访问正文链接，也不调用外部 API 或大语言模型。
 
 ## 支持的发件人
 
@@ -10,7 +10,7 @@
 - `no-reply@ieee.org`
 - `no-reply@xplore.ieee.org`
 
-IEEE 发件地址匹配后，还必须由 Author Alert 主题或 IEEE Xplore Document 链接确认内容。普通 IEEE 系统邮件不会被处理。
+IEEE 发件地址匹配后，还必须由 Author Alert、`New Matches Available for Your Search` 主题或 IEEE Xplore Document 链接确认内容。普通 IEEE 系统邮件不会被处理。
 
 ## 安装
 

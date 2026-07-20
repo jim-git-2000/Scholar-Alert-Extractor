@@ -12,7 +12,6 @@ from scholar_alerts.logging_config import configure_logging
 from scholar_alerts.processor import MessageProcessor, read_last_run
 from scholar_alerts.source_detector import detect_source
 
-
 app = typer.Typer(
     help="无痕读取 Google Scholar 与 IEEE Author Alert，并维护本地 Excel。",
     no_args_is_help=True,

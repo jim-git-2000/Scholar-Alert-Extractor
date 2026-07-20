@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
 from scholar_alerts.imap_client import ImapMailClient, MarkSeenError, MessageBecameSeenError
-
 
 RAW = b"""From: Scholar <scholaralerts-noreply@google.com>
 Subject: Scholar Alert: DOA
@@ -24,6 +23,7 @@ class FakeImap:
         self.fetch_requests = []
         self.selected = None
         self.logged_out = False
+        self.client_id = None
 
     def login(self, username, password):
         assert username == "user@example.test"
@@ -31,6 +31,13 @@ class FakeImap:
 
     def logout(self):
         self.logged_out = True
+
+    def has_capability(self, capability):
+        return capability == b"ID"
+
+    def id_(self, parameters):
+        self.client_id = parameters
+        return {b"name": b"Coremail"}
 
     def list_folders(self):
         return [((), "/", "INBOX"), ((), "/", "论文提醒")]
@@ -52,7 +59,7 @@ class FakeImap:
                 uid: {
                     b"BODY[HEADER.FIELDS (FROM SUBJECT DATE MESSAGE-ID)]": headers,
                     b"FLAGS": tuple(self.flags[uid]),
-                    b"INTERNALDATE": datetime(2026, 7, 1, tzinfo=timezone.utc),
+                    b"INTERNALDATE": datetime(2026, 7, 1, tzinfo=UTC),
                 }
             }
         if b"BODY.PEEK[]" in items:
@@ -82,14 +89,14 @@ def test_list_scan_and_body_peek_do_not_set_seen(settings_factory):
         assert mail.fetch_raw_peek(10) == RAW
     assert any(b"BODY.PEEK[]" in request for request in fake.fetch_requests)
     assert not fake.flags[10]
+    assert fake.client_id["name"] == "Scholar Alert Extractor"
     assert fake.logged_out
 
 
 def test_unexpected_seen_after_peek_is_fatal(settings_factory):
     fake = FakeImap(become_seen=True)
-    with _mail(settings_factory, fake) as mail:
-        with pytest.raises(MessageBecameSeenError):
-            mail.fetch_raw_peek(10)
+    with _mail(settings_factory, fake) as mail, pytest.raises(MessageBecameSeenError):
+        mail.fetch_raw_peek(10)
 
 
 def test_mark_seen_verifies_server_flags(settings_factory):
@@ -101,7 +108,5 @@ def test_mark_seen_verifies_server_flags(settings_factory):
 
 def test_mark_seen_failure_is_reported(settings_factory):
     fake = FakeImap(refuse_seen=True)
-    with _mail(settings_factory, fake) as mail:
-        with pytest.raises(MarkSeenError):
-            mail.mark_seen(10)
-
+    with _mail(settings_factory, fake) as mail, pytest.raises(MarkSeenError):
+        mail.mark_seen(10)

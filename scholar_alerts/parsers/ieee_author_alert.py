@@ -9,8 +9,8 @@ from scholar_alerts.dedup import deduplicate_papers
 from scholar_alerts.models import MimeMessage, Paper, ParseResult
 from scholar_alerts.normalizers import normalize_doi, normalize_ieee_document_id, normalize_url
 from scholar_alerts.parsers.base import (
-    AlertParser,
     URL_RE,
+    AlertParser,
     clean_text,
     extract_year,
     lines_from_block,
@@ -18,7 +18,6 @@ from scholar_alerts.parsers.base import (
     soup_for,
     split_authors,
 )
-
 
 _MANAGEMENT_WORDS = {
     "unsubscribe",
@@ -39,6 +38,7 @@ def _alert_name(subject: str, text: str | None) -> str | None:
     patterns = (
         r"(?:new content from|author alert(?:\s+for)?)\s*[:：-]?\s*([^|\n]+)",
         r"articles?\s+by\s+([^|\n]+)",
+        r"(?:search query|saved search|search alert)\s*[:：-]\s*([^|\n]+)",
     )
     for value in (subject, (text or "")[:1000]):
         for pattern in patterns:

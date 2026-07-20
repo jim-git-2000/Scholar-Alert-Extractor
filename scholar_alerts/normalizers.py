@@ -5,7 +5,6 @@ import re
 import unicodedata
 from urllib.parse import parse_qsl, unquote, urlencode, urlsplit, urlunsplit
 
-
 _TRACKING_PARAMS = {
     "gclid",
     "fbclid",

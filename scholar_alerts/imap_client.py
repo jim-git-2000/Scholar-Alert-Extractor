@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
+from contextlib import suppress
 from datetime import datetime
 from email import policy
 from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
 from typing import Any
 
+from scholar_alerts import __version__
 from scholar_alerts.config import Settings
 from scholar_alerts.mime_parser import decode_header_value, extract_sender
 from scholar_alerts.models import MessageSummary
+
+LOGGER = logging.getLogger(__name__)
 
 
 class ImapOperationError(RuntimeError):
@@ -54,6 +59,14 @@ def _first(data: dict[Any, Any], *names: bytes) -> Any:
     return None
 
 
+def _safe_error_detail(exc: Exception, settings: Settings) -> str:
+    detail = str(exc).strip() or type(exc).__name__
+    for secret in (settings.imap_password, settings.imap_username):
+        if secret:
+            detail = detail.replace(secret, "<redacted>")
+    return detail[:500]
+
+
 class ImapMailClient:
     def __init__(self, settings: Settings, client_factory: Callable[..., Any] | None = None):
         self.settings = settings
@@ -81,10 +94,35 @@ class ImapMailClient:
         try:
             self.client = self._new_client()
             self.client.login(self.settings.imap_username, self.settings.imap_password)
+            self._send_client_id()
             return self
         except Exception as exc:
+            detail = _safe_error_detail(exc, self.settings)
+            if self.client is not None:
+                with suppress(Exception):
+                    self.client.logout()
             self.client = None
-            raise ImapLoginError(f"IMAP 登录失败: {type(exc).__name__}") from exc
+            raise ImapLoginError(f"IMAP 登录失败: {detail}") from exc
+
+    def _send_client_id(self) -> None:
+        """Identify the client because NetEase rejects SELECT from anonymous clients."""
+        assert self.client is not None
+        id_command = getattr(self.client, "id_", None)
+        has_capability = getattr(self.client, "has_capability", None)
+        if not callable(id_command):
+            return
+        try:
+            if callable(has_capability) and not has_capability(b"ID"):
+                return
+            id_command(
+                {
+                    "name": "Scholar Alert Extractor",
+                    "version": __version__,
+                    "vendor": "local",
+                }
+            )
+        except Exception as exc:
+            LOGGER.warning("IMAP ID 命令未成功: %s", type(exc).__name__)
 
     def close(self) -> None:
         if self.client is None:
@@ -118,8 +156,9 @@ class ImapMailClient:
         try:
             return self.client.select_folder(self.settings.target_folder, readonly=readonly)
         except Exception as exc:
+            detail = _safe_error_detail(exc, self.settings)
             raise FolderNotFoundError(
-                f"无法选择目标文件夹 {self.settings.target_folder!r}: {type(exc).__name__}"
+                f"无法选择目标文件夹 {self.settings.target_folder!r}: {detail}"
             ) from exc
 
     def unread_summaries(self, *, limit: int | None = None) -> list[MessageSummary]:

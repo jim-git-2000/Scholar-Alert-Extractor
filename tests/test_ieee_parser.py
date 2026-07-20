@@ -64,3 +64,39 @@ DOI: 10.1109/LSP.2026.777
     assert result.complete
     assert result.papers[0].ieee_document_id == "77778888"
     assert result.papers[0].title == "Tensor Direction Estimation"
+
+
+def test_ieee_saved_search_matches_are_parsed():
+    html = """
+    <html><body>
+      <p>Search Query: polarization sensitive sparse array</p>
+      <article>
+        <h2><a href="https://ieeexplore.ieee.org/document/55556666">
+          Polarimetric Sparse Array Processing
+        </a></h2>
+        <p>Authors: Alice Zhang; Bob Li</p>
+        <p>Published in: IEEE Transactions on Signal Processing, 2026</p>
+        <p>DOI: 10.1109/TSP.2026.555</p>
+      </article>
+      <article>
+        <h2><a href="https://ieeexplore.ieee.org/document/88889999">
+          Direction Finding with Vector Sensors
+        </a></h2>
+        <p>Authors: Carol Wu; David Sun</p>
+        <p>Publication: IEEE Sensors Journal, 2025</p>
+      </article>
+    </body></html>
+    """
+    message = parse_message(
+        make_html_email(
+            "no-reply@ieee.org",
+            "New Matches Available for Your Search",
+            html,
+        )
+    )
+    result = IeeeAuthorAlertParser().parse(message, 23)
+    assert result.complete
+    assert result.detected_items == 2
+    assert result.papers[0].alert_name == "polarization sensitive sparse array"
+    assert result.papers[0].ieee_document_id == "55556666"
+    assert result.papers[1].title == "Direction Finding with Vector Sensors"

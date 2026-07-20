@@ -17,7 +17,6 @@ from scholar_alerts.models import ProcessedMessage
 from scholar_alerts.parsers import GoogleScholarParser, IeeeAuthorAlertParser
 from scholar_alerts.source_detector import detect_source
 
-
 LOGGER = logging.getLogger(__name__)
 
 
