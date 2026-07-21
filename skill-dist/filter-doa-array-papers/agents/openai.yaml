@@ -1,0 +1,4 @@
+interface:
+  display_name: "DOA 阵列论文增量筛选"
+  short_description: "从已有 Excel 增量筛选真正与 DOA、阵列信号处理有关的新增论文"
+  default_prompt: "Use $filter-doa-array-papers to screen only newly appended Excel records and update my DOA/array paper shortlist."

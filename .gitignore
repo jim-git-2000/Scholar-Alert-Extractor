@@ -1,10 +1,25 @@
+# Local credentials and machine-specific configuration
 .env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Python environments and caches
 .venv/
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .ruff_cache/
-output/*.xlsx
-output/*.tmp
-output/*.log
-output/.last_run.json
+
+# Runtime data may contain mailbox metadata, paper records, or personal paths
+output/*
+!output/.gitkeep
+
+# Raw email exports may contain addresses, message IDs, and message bodies
+*.eml
+!tests/fixtures/**/*.eml
